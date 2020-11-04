@@ -9,6 +9,7 @@ class AntColonyOptimization : public IPathfinder
 {
 public:
     AntColonyOptimization();
+    virtual ~AntColonyOptimization();
     int StartSearch() override;
     bool Init(vector<string> Parameters) override;
 
@@ -21,18 +22,20 @@ private:
     void SetNegativeValueAroundPoint(const int& i, const int& j);
     bool IsCellOkey();
     void CalculateProbability(vector<double>& selectables);
-    void LocalPheromoneUpdate(const Point& temp,const Point& chosen);
+    void LocalPheromoneUpdate(const vector<Point> &path);
     void GlobalPheromoneUpdate(const vector<Point>& path);
+    double UpdateEvaporationFormula(const int& fromNodeNum,const int& toNodeNum);
+    void DrawSolution(const int& colornum,const vector<Point>& Path);
 private:
 
     int dstNodeNum;
     int numberOfAnts;
-    double initialPheromoneLevel;
-    double pheromoneEvaporationLevel;
+    double tauzero;
+    double phi;
     int numberOfIterations;
     int numberofgridcells;
     double* PHEROMONCOSTMATRIX;
-    bool* PROCESSED;
+    bool* VISITED;
     vector<Point> ShortestPath;
     int shortestPathAntId;
 
