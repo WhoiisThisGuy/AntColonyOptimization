@@ -21,7 +21,10 @@ SOURCES += \
 
 HEADERS += \
     AntColonyOptimization_global.h \
-    antcolonyoptimization.h
+    antcolonyoptimization.h \
+    iobserver.h \
+    iobserver.h \
+    ipathfinder.h
 
 # Default rules for deployment.
 unix {
