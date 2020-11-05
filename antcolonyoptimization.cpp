@@ -15,15 +15,17 @@ AntColonyOptimization::~AntColonyOptimization()
         delete [] VISITED;
     if(PHEROMONCOSTMATRIX)
         delete [] PHEROMONCOSTMATRIX;
+
+    cout<<" ACO deletted"<<endl;
 }
 
 int AntColonyOptimization::StartSearch()
 {
 
-    cout<<"Starting search!"<<endl;
     for(int i = 0; i<numberOfIterations;++i){
-
-        cout<<i<<". iteration starts"<<endl;
+        cout<<"Press a key to start"<<i<<". iteration"<<endl;
+        std::cin.ignore();
+        NodeNumPairMap.clear();
 
         //Finding country roads
         for(int antId = 0;antId<numberOfAnts;++antId){
@@ -38,10 +40,9 @@ int AntColonyOptimization::StartSearch()
             }//result iteration
             cout<<"Ant "<<antId<<" found solution!"<<endl;
 
-
         }//AntId iteration
 
-        GlobalPheromoneUpdate(ShortestPath);
+        GlobalPheromoneUpdate();
         cout<<"Pheromone Update Done!"<<endl;
     } //Main iteration
 
@@ -54,6 +55,14 @@ int AntColonyOptimization::StartSearch()
 
 bool AntColonyOptimization::Init(vector<string> Parameters) //0 - number of ants, 1 - initial pheromone level, 2 - phi, 3 - number of iterations
 {
+    //PARAMETERS//
+    numberOfAnts = 1;
+    tauzero = 0.0;
+    phi = 0.5;
+    numberOfIterations = 10;
+    alpha = 2.0;
+    //PARAMETERS//
+
     //Init variables
     dstNodeNum = gridcontroller->dst.y*gridcontroller->numberOfColumns+gridcontroller->dst.x;
 
@@ -61,21 +70,13 @@ bool AntColonyOptimization::Init(vector<string> Parameters) //0 - number of ants
     PHEROMONCOSTMATRIX = new double[numberofgridcells*numberofgridcells];
     VISITED = new bool[numberofgridcells];
 
-    memset(PHEROMONCOSTMATRIX,0,(numberofgridcells*numberofgridcells)*sizeof(double));
+    memset(PHEROMONCOSTMATRIX,tauzero,(numberofgridcells*numberofgridcells)*sizeof(double));
     memset(VISITED,0,numberofgridcells*sizeof(bool));
 
 //    numberOfAnts =  stoi(Parameters[0]);
 //    tauzero =  stoi(Parameters[1]);
 //    phi =  stoi(Parameters[2]);
 //    numberOfIterations = stoi(Parameters[3]);
-
-
-    //PARAMETERS//
-    numberOfAnts = 5;
-    tauzero = 0.0;
-    phi = 0.5;
-    numberOfIterations = 1;
-    //PARAMETERS//
 
     for(int i = 0;i<gridcontroller->numberOfRows;++i){
         for(int j = 0;j<gridcontroller->numberOfColumns;++j){
@@ -85,7 +86,6 @@ bool AntColonyOptimization::Init(vector<string> Parameters) //0 - number of ants
                 //Means this is a blocked cell so every edge into this cell has -1 level
                 SetNegativeValueAroundPoint(i,j);
             }
-            PHEROMONCOSTMATRIX[i*gridcontroller->numberOfColumns+j] = tauzero;
         }
     }
     cout<<"Init Successful"<<endl;
@@ -109,57 +109,57 @@ void AntColonyOptimization::SetNegativeValueAroundPoint(const int& i, const int&
         && gridcontroller->grid[(temp.y-1)*col+(temp.x-1)] != 3)//top left
     {
         neighbournodenum = (temp.y-1)*col+(temp.x-1);
-        PHEROMONCOSTMATRIX[tempnodenum*col+neighbournodenum] = -1;
-        PHEROMONCOSTMATRIX[neighbournodenum*col+tempnodenum] = -1;
+
+        PHEROMONCOSTMATRIX[neighbournodenum*numberofgridcells+tempnodenum] = -1;
     }
     if(temp.y != 0 && gridcontroller->grid[(temp.y-1)*col+temp.x] != 1
         && gridcontroller->grid[(temp.y-1)*col+temp.x] != 3)//top
     {
         neighbournodenum = (temp.y-1)*col+temp.x;
-        PHEROMONCOSTMATRIX[tempnodenum*col+neighbournodenum] = -1;
-        PHEROMONCOSTMATRIX[neighbournodenum*col+tempnodenum] = -1;
+
+        PHEROMONCOSTMATRIX[neighbournodenum*numberofgridcells+tempnodenum] = -1;
     }
     if(temp.x != col-1 && temp.y != 0 && gridcontroller->grid[(temp.y-1)*col+(temp.x+1)] != 1
         && gridcontroller->grid[(temp.y-1)*col+(temp.x+1)] != 3)//top right
     {
         neighbournodenum = (temp.y-1)*col+(temp.x+1);
-        PHEROMONCOSTMATRIX[tempnodenum*col+neighbournodenum] = -1;
-        PHEROMONCOSTMATRIX[neighbournodenum*col+tempnodenum] = -1;
+
+        PHEROMONCOSTMATRIX[neighbournodenum*numberofgridcells+tempnodenum] = -1;
     }
     if(temp.x != col-1 && gridcontroller->grid[temp.y*col+(temp.x+1)] != 1
         && gridcontroller->grid[temp.y*col+(temp.x+1)] != 3)//right
     {
         neighbournodenum = temp.y*col+(temp.x+1);
-        PHEROMONCOSTMATRIX[tempnodenum*col+neighbournodenum] = -1;
-        PHEROMONCOSTMATRIX[neighbournodenum*col+tempnodenum] = -1;
+
+        PHEROMONCOSTMATRIX[neighbournodenum*numberofgridcells+tempnodenum] = -1;
     }
     if(temp.x != col-1 && temp.y != row-1 && gridcontroller->grid[(temp.y+1)*col+(temp.x+1)] != 1
         && gridcontroller->grid[(temp.y+1)*col+(temp.x+1)] != 3)//down right
     {
         neighbournodenum = (temp.y+1)*col+(temp.x+1);
-        PHEROMONCOSTMATRIX[tempnodenum*col+neighbournodenum] = -1;
-        PHEROMONCOSTMATRIX[neighbournodenum*col+tempnodenum] = -1;
+
+        PHEROMONCOSTMATRIX[neighbournodenum*numberofgridcells+tempnodenum] = -1;
     }
     if(temp.y != row-1 && gridcontroller->grid[(temp.y+1)*col+temp.x] != 1
         && gridcontroller->grid[(temp.y+1)*col+temp.x] != 3)//down
     {
         neighbournodenum = (temp.y+1)*col+temp.x;
-        PHEROMONCOSTMATRIX[tempnodenum*col+neighbournodenum] = -1;
-        PHEROMONCOSTMATRIX[neighbournodenum*col+tempnodenum] = -1;
+
+        PHEROMONCOSTMATRIX[neighbournodenum*numberofgridcells+tempnodenum] = -1;
     }
     if(temp.x != 0 && temp.y != row-1 && gridcontroller->grid[(temp.y+1)*col+temp.x-1] != 1
         && gridcontroller->grid[(temp.y+1)*col+temp.x-1] != 3)//down left
     {
         neighbournodenum = (temp.y+1)*col+temp.x-1;
-        PHEROMONCOSTMATRIX[tempnodenum*col+neighbournodenum] = -1;
-        PHEROMONCOSTMATRIX[neighbournodenum*col+tempnodenum] = -1;
+
+        PHEROMONCOSTMATRIX[neighbournodenum*numberofgridcells+tempnodenum] = -1;
     }
     if(temp.x != 0 && gridcontroller->grid[temp.y*col+temp.x-1] != 1
         && gridcontroller->grid[temp.y*col+temp.x-1] != 3)//left
     {
         neighbournodenum = temp.y*col+temp.x-1;
-        PHEROMONCOSTMATRIX[tempnodenum*col+neighbournodenum] = -1;
-        PHEROMONCOSTMATRIX[neighbournodenum*col+tempnodenum] = -1;
+
+        PHEROMONCOSTMATRIX[neighbournodenum*numberofgridcells+tempnodenum] = -1;
     }
 }
 
@@ -183,14 +183,21 @@ int AntColonyOptimization::FindSolutionForAnt(const int& antId)
         }
         //check pheromone levels around
         chosenOne = ChooseNextNode(temp); //get the next node from temp
-        //Locally Update pheromone level
 
         temp = chosenOne;
         VISITED[temp.y*gridcontroller->numberOfColumns+temp.x] = true;
-        Path.push_back(temp);
-    }
 
-    if(Path.size()<ShortestPath.size()){ //Save Shortest Path
+        Path.push_back(temp);
+
+    }
+    ///////////////////////////SOLUTION FOUND FROM HERE /////////////////////////////////
+    SumDeltaTauijk(Path); //Saving this for Global update
+
+    if(antId == 0){
+        ShortestLenght = Path.size();
+        ShortestPath = Path;
+    }
+    else if(Path.size()<ShortestLenght){ //Save Shortest Path
         ShortestPath = Path;
         shortestPathAntId = antId;
     }
@@ -212,8 +219,10 @@ void AntColonyOptimization::DrawSolution(const int &colornum, const vector<Point
         gridcontroller->setGridValue(Path.at(i).y,Path.at(i).x,colornum);
     }    catch(std::out_of_range e){
     cout<<"drawsolution out of range"<<endl;
+    }
 }
-}
+
+
 
 bool AntColonyOptimization::HasFreeNeighBour(const Point& temp) //Check if it has anywhere to go
 {
@@ -222,27 +231,27 @@ bool AntColonyOptimization::HasFreeNeighBour(const Point& temp) //Check if it ha
     row = gridcontroller->numberOfRows;
 
     if(
-       (temp.x != 0 && temp.y != 0 && gridcontroller->grid[(temp.y-1)*col+(temp.x-1)] != 1 && !VISITED[(temp.y-1)*col+(temp.x-1)])//top left
-     ||(temp.y != 0 && gridcontroller->grid[(temp.y-1)*col+temp.x] != 1 && !VISITED[(temp.y-1)*col+temp.x])//top
-     ||(temp.x != col-1 && temp.y != 0 && gridcontroller->grid[(temp.y-1)*col+(temp.x+1)] != 1 && !VISITED[(temp.y-1)*col+(temp.x+1)])//top right
-     ||(temp.x != col-1 && gridcontroller->grid[temp.y*col+(temp.x+1)] != 1 && !VISITED[temp.y*col+(temp.x+1)])//right
-     ||(temp.x != col-1 && temp.y != row-1 && gridcontroller->grid[(temp.y+1)*col+(temp.x+1)] != 1 && !VISITED[(temp.y+1)*col+(temp.x+1)])//down right
-     ||(temp.y != row-1 && gridcontroller->grid[(temp.y+1)*col+temp.x] != 1 && !VISITED[(temp.y+1)*col+temp.x])//down
-     ||(temp.x != 0 && temp.y != row-1 && gridcontroller->grid[(temp.y+1)*col+temp.x-1] != 1 && !VISITED[(temp.y+1)*col+temp.x-1])//down left
-     ||(temp.x != 0 && gridcontroller->grid[temp.y*col+temp.x-1] != 1 && !VISITED[temp.y*col+temp.x-1])//left
+       (temp.x != 0 && temp.y != 0 && gridcontroller->grid[(temp.y-1)*col+(temp.x-1)] != 1 && gridcontroller->grid[(temp.y-1)*col+(temp.x-1)] != 2 && !VISITED[(temp.y-1)*col+(temp.x-1)])//top left
+     ||(temp.y != 0 && gridcontroller->grid[(temp.y-1)*col+temp.x] != 1 && gridcontroller->grid[(temp.y-1)*col+temp.x] != 2 && !VISITED[(temp.y-1)*col+temp.x])//top
+     ||(temp.x != col-1 && temp.y != 0 && gridcontroller->grid[(temp.y-1)*col+(temp.x+1)] != 1 && gridcontroller->grid[(temp.y-1)*col+(temp.x+1)] != 2 && !VISITED[(temp.y-1)*col+(temp.x+1)])//top right
+     ||(temp.x != col-1 && gridcontroller->grid[temp.y*col+(temp.x+1)] != 1  && gridcontroller->grid[temp.y*col+(temp.x+1)] != 2 && !VISITED[temp.y*col+(temp.x+1)])//right
+     ||(temp.x != col-1 && temp.y != row-1 && gridcontroller->grid[(temp.y+1)*col+(temp.x+1)] != 1 && gridcontroller->grid[(temp.y+1)*col+(temp.x+1)] != 2 && !VISITED[(temp.y+1)*col+(temp.x+1)])//down right
+     ||(temp.y != row-1 && gridcontroller->grid[(temp.y+1)*col+temp.x] != 1 && gridcontroller->grid[(temp.y+1)*col+temp.x] != 2 && !VISITED[(temp.y+1)*col+temp.x])//down
+     ||(temp.x != 0 && temp.y != row-1 && gridcontroller->grid[(temp.y+1)*col+temp.x-1] != 1 && gridcontroller->grid[(temp.y+1)*col+temp.x-1] != 2 && !VISITED[(temp.y+1)*col+temp.x-1])//down left
+     ||(temp.x != 0 && gridcontroller->grid[temp.y*col+temp.x-1] != 1 && gridcontroller->grid[temp.y*col+temp.x-1] != 2 && !VISITED[temp.y*col+temp.x-1])//left
        ) return true;
 
     return false;
 }
 
-int AntColonyOptimization::RouletteWheelSelect(const vector<double>& selectables)
+int AntColonyOptimization::RouletteWheelSelect(const vector<double>& ijprobabilites)
 {
     srand (time(NULL));
     double rnd = (rand() % 10 + 1)/(double)10;
     double offset = 0.0;
 
-    for (int i = selectables.size()-1; i>=0 ; --i) {
-        offset += selectables[i];
+    for (int i = ijprobabilites.size()-1; i>=0 ; --i) {
+        offset += ijprobabilites[i];
         if (rnd <= offset) {
             return i;
         }
@@ -250,7 +259,7 @@ int AntColonyOptimization::RouletteWheelSelect(const vector<double>& selectables
     //This point means all of them has the initial value so choose randomly a cell.
     int randint;
 
-    randint = rand() % selectables.size();
+    randint = rand() % ijprobabilites.size();
 
     return randint;
 }
@@ -258,7 +267,7 @@ int AntColonyOptimization::RouletteWheelSelect(const vector<double>& selectables
 Point AntColonyOptimization::ChooseNextNode(const Point& temp)
 {
   vector<Point> SelectableNodes;
-  vector<double> Selectables;
+  vector<double> ijpheromonevalues;
 
   int col,row;
   int tempnodenum = 0;
@@ -269,76 +278,95 @@ Point AntColonyOptimization::ChooseNextNode(const Point& temp)
   tempnodenum = temp.y*col+temp.x;
 
   if(temp.x != 0 && temp.y != 0
-      && gridcontroller->grid[(temp.y-1)*col+(temp.x-1)] != 1)//top left
+      && gridcontroller->grid[(temp.y-1)*col+(temp.x-1)] != 1
+          && gridcontroller->grid[(temp.y-1)*col+(temp.x-1)] != 2)//top left
   {
       neighbournodenum = (temp.y-1)*col+(temp.x-1);
       if(dstNodeNum == neighbournodenum)
           return Point(temp.x-1,temp.y-1);
-      Selectables.push_back(PHEROMONCOSTMATRIX[tempnodenum*col+neighbournodenum]);
+      ijpheromonevalues.push_back(PHEROMONCOSTMATRIX[tempnodenum*numberofgridcells+neighbournodenum]);
       SelectableNodes.push_back(Point(temp.x-1,temp.y-1));
   }
-  if(temp.y != 0 && gridcontroller->grid[(temp.y-1)*col+temp.x] != 1)//top
+  if(temp.y != 0 && gridcontroller->grid[(temp.y-1)*col+temp.x] != 1
+          && gridcontroller->grid[(temp.y-1)*col+temp.x] != 2)//top
   {
       neighbournodenum = (temp.y-1)*col+temp.x;
       if(dstNodeNum == neighbournodenum)
           return Point(temp.x,temp.y-1);
-      Selectables.push_back(PHEROMONCOSTMATRIX[tempnodenum*col+neighbournodenum]);
+      ijpheromonevalues.push_back(PHEROMONCOSTMATRIX[tempnodenum*numberofgridcells+neighbournodenum]);
       SelectableNodes.push_back(Point(temp.x,temp.y-1));
   }
-  if(temp.x != col-1 && temp.y != 0 && gridcontroller->grid[(temp.y-1)*col+(temp.x+1)] != 1)//top right
+  if(temp.x != col-1 && temp.y != 0 && gridcontroller->grid[(temp.y-1)*col+(temp.x+1)] != 1
+          && gridcontroller->grid[(temp.y-1)*col+(temp.x+1)] != 2)//top right
   {
       neighbournodenum = (temp.y-1)*col+(temp.x+1);
       if(dstNodeNum == neighbournodenum)
           return Point(temp.x+1,temp.y-1);
-      Selectables.push_back(PHEROMONCOSTMATRIX[tempnodenum*col+neighbournodenum]);
+      ijpheromonevalues.push_back(PHEROMONCOSTMATRIX[tempnodenum*numberofgridcells+neighbournodenum]);
       SelectableNodes.push_back(Point(temp.x+1,temp.y-1));
   }
-  if(temp.x != col-1 && gridcontroller->grid[temp.y*col+(temp.x+1)] != 1)//right
+  if(temp.x != col-1 && gridcontroller->grid[temp.y*col+(temp.x+1)] != 1
+          && gridcontroller->grid[temp.y*col+(temp.x+1)] != 2)//right
   {
       neighbournodenum = temp.y*col+(temp.x+1);
       if(dstNodeNum == neighbournodenum)
           return Point(temp.x+1,temp.y);
-      Selectables.push_back(PHEROMONCOSTMATRIX[tempnodenum*col+neighbournodenum]);
+      ijpheromonevalues.push_back(PHEROMONCOSTMATRIX[tempnodenum*numberofgridcells+neighbournodenum]);
       SelectableNodes.push_back(Point(temp.x+1,temp.y));
   }
-  if(temp.x != col-1 && temp.y != row-1 && gridcontroller->grid[(temp.y+1)*col+(temp.x+1)] != 1)//down right
+  if(temp.x != col-1 && temp.y != row-1 && gridcontroller->grid[(temp.y+1)*col+(temp.x+1)] != 1
+          && gridcontroller->grid[(temp.y+1)*col+(temp.x+1)] != 2)//down right
   {
       neighbournodenum = (temp.y+1)*col+(temp.x+1);
       if(dstNodeNum == neighbournodenum)
           return Point(temp.x+1,temp.y+1);
-      Selectables.push_back(PHEROMONCOSTMATRIX[tempnodenum*col+neighbournodenum]);
+      ijpheromonevalues.push_back(PHEROMONCOSTMATRIX[tempnodenum*numberofgridcells+neighbournodenum]);
       SelectableNodes.push_back(Point(temp.x+1,temp.y+1));
   }
-  if(temp.y != row-1 && gridcontroller->grid[(temp.y+1)*col+temp.x] != 1)//down
+  if(temp.y != row-1 && gridcontroller->grid[(temp.y+1)*col+temp.x] != 1
+          && gridcontroller->grid[(temp.y+1)*col+temp.x] != 2)//down
   {
       neighbournodenum = (temp.y+1)*col+temp.x;
       if(dstNodeNum == neighbournodenum)
           return Point(temp.x,temp.y+1);
-      Selectables.push_back(PHEROMONCOSTMATRIX[tempnodenum*col+neighbournodenum]);
+      ijpheromonevalues.push_back(PHEROMONCOSTMATRIX[tempnodenum*numberofgridcells+neighbournodenum]);
       SelectableNodes.push_back(Point(temp.x,temp.y+1));
   }
-  if(temp.x != 0 && temp.y != row-1 && gridcontroller->grid[(temp.y+1)*col+temp.x-1] != 1)//down left
+  if(temp.x != 0 && temp.y != row-1 && gridcontroller->grid[(temp.y+1)*col+temp.x-1] != 1
+          && gridcontroller->grid[(temp.y+1)*col+temp.x-1] != 2)//down left
   {
       neighbournodenum = (temp.y+1)*col+temp.x-1;
       if(dstNodeNum == neighbournodenum)
           return Point(temp.x-1,temp.y+1);
-      Selectables.push_back(PHEROMONCOSTMATRIX[tempnodenum*col+neighbournodenum]);
+      ijpheromonevalues.push_back(PHEROMONCOSTMATRIX[tempnodenum*numberofgridcells+neighbournodenum]);
       SelectableNodes.push_back(Point(temp.x-1,temp.y+1));
   }
-  if(temp.x != 0 && gridcontroller->grid[temp.y*col+temp.x-1] != 1)//left
+  if(temp.x != 0 && gridcontroller->grid[temp.y*col+temp.x-1] != 1
+          && gridcontroller->grid[temp.y*col+temp.x-1] != 2)//left
   {
       neighbournodenum = temp.y*col+temp.x-1;
       if(dstNodeNum == neighbournodenum)
           return Point(temp.x-1,temp.y);
-      Selectables.push_back(PHEROMONCOSTMATRIX[tempnodenum*col+neighbournodenum]);
+      ijpheromonevalues.push_back(PHEROMONCOSTMATRIX[tempnodenum*numberofgridcells+neighbournodenum]);
       SelectableNodes.push_back(Point(temp.x-1,temp.y));
   }
 
-  CalculateProbability(Selectables); //Calculate the P(i,j) probabilites
+  vector<double> ijprobabilites;
 
+  try{
+  CalculateProbability(ijpheromonevalues,tempnodenum,ijprobabilites); //Calculate the P(i,j) probabilites
+  }catch(std::out_of_range e){
+      cout<<"Calcproberror range"<<endl;
+  }
+    try{
+  ComulativeSum(ijprobabilites);
+}catch(std::out_of_range e){
+    cout<<"Comulateivaisd sum range error"<<endl;
+}
   int theChosenOne;
 
-  theChosenOne = RouletteWheelSelect(Selectables); //Select one
+
+  theChosenOne = RouletteWheelSelect(ijprobabilites); //Select one
 
   Point result;
   result = SelectableNodes.at(theChosenOne);
@@ -346,13 +374,28 @@ Point AntColonyOptimization::ChooseNextNode(const Point& temp)
 
 }
 
-void AntColonyOptimization::CalculateProbability(vector<double> &Selectables)
+void AntColonyOptimization::CalculateProbability(const vector<double> &ijpheromonevalues, int tempnodenum,vector<double> &ijprobabilites)
 {
-    for (int i = 0; i < Selectables.size(); i++) { //Cumulative sum
-        for (int j = i; j < Selectables.size(); j++) {
+    double value = 0.0;
+
+    for (int i = 0; i < (int)ijpheromonevalues.size(); i++) { //Cumulative sum
+        value = 0.0;
+        for (int j = 0; j < (int)ijpheromonevalues.size(); j++) {
             if(i == j)
                 continue;
-             Selectables.at(i) += Selectables.at(j);
+            value += pow(ijpheromonevalues.at(j),alpha);
+        }
+        ijprobabilites.push_back((pow(ijpheromonevalues.at(i),alpha))/value);
+    }
+}
+
+void AntColonyOptimization::ComulativeSum(vector<double> &ijprobabilites)
+{
+    for (int i = 0; i < (int)ijprobabilites.size(); i++) { //Cumulative sum
+        for (int j = i; j < (int)ijprobabilites.size(); j++) {
+            if(i == j)
+                continue;
+             ijprobabilites.at(i) += ijprobabilites.at(j);
         }
     }
 }
@@ -376,32 +419,81 @@ void AntColonyOptimization::LocalPheromoneUpdate(const vector<Point> &path)
         to = path.at(i+1);
         fromNodeNum = from.y*gridcontroller->numberOfColumns+from.x;
         toNodeNum = to.y*gridcontroller->numberOfColumns+to.x;
-        tempvalue = PHEROMONCOSTMATRIX[fromNodeNum*gridcontroller->numberOfColumns+toNodeNum];
-        PHEROMONCOSTMATRIX[fromNodeNum*gridcontroller->numberOfColumns+toNodeNum] = (1-phi)*tempvalue+phi*tauzero;
-        PHEROMONCOSTMATRIX[toNodeNum*gridcontroller->numberOfColumns+fromNodeNum] = PHEROMONCOSTMATRIX[fromNodeNum*gridcontroller->numberOfColumns+toNodeNum];
+        tempvalue = PHEROMONCOSTMATRIX[fromNodeNum*numberofgridcells+toNodeNum];
+        PHEROMONCOSTMATRIX[fromNodeNum*numberofgridcells+toNodeNum] = (1-phi)*tempvalue+phi*tauzero;
     }
 }
 
-void AntColonyOptimization::GlobalPheromoneUpdate(const vector<Point> &path)
+void AntColonyOptimization::GlobalPheromoneUpdate()
 {
+    double tauij,sumdeltatauijk;
+    std::map<nodenumpair,double>::const_iterator it;
 
-    Point from,to;
+    for (int i = 0; i < numberofgridcells; i++) { //Cumulative sum
+        for (int j = 0; j < numberofgridcells; j++) {
 
-    int fromNodeNum,toNodeNum;
+            tauij = 0.0;
+            sumdeltatauijk = 0.0;
 
-    int L = path.size();
+            if(i == j || PHEROMONCOSTMATRIX[i*numberofgridcells+j] == -1)
+                continue;
 
-    for(int i = 0;i<L-1;++i){
-        from = path.at(i);
-        to = path.at(i+1);
-        fromNodeNum = from.y*gridcontroller->numberOfColumns+from.x;
-        toNodeNum = to.y*gridcontroller->numberOfColumns+to.x;
-        PHEROMONCOSTMATRIX[fromNodeNum*gridcontroller->numberOfColumns+toNodeNum] = UpdateEvaporationFormula(fromNodeNum,toNodeNum);
-        PHEROMONCOSTMATRIX[toNodeNum*gridcontroller->numberOfColumns+fromNodeNum] = PHEROMONCOSTMATRIX[fromNodeNum*gridcontroller->numberOfColumns+toNodeNum];
+            tauij = PHEROMONCOSTMATRIX[i*numberofgridcells+j];
+            it = NodeNumPairMap.find(nodenumpair(i,j));
+
+            if(it != NodeNumPairMap.end())
+                sumdeltatauijk = it->second;
+            PHEROMONCOSTMATRIX[i*numberofgridcells+j] = GlobalPheromoneFormula(tauij,sumdeltatauijk);
+
+        }
+    }
+}
+////////////////////BEST PATH UPDATE
+//    Point from,to;
+
+//    int fromNodeNum,toNodeNum;
+
+//    int L = path.size();
+
+//    for(int i = 0;i<L-1;++i){
+//        from = path.at(i);
+//        to = path.at(i+1);
+//        fromNodeNum = from.y*gridcontroller->numberOfColumns+from.x;
+//        toNodeNum = to.y*gridcontroller->numberOfColumns+to.x;
+//        PHEROMONCOSTMATRIX[fromNodeNum*gridcontroller->numberOfColumns+toNodeNum] = UpdateEvaporationFormula(fromNodeNum,toNodeNum);
+//    }
+
+double AntColonyOptimization::GlobalPheromoneFormula(double tauij, double sumdeltatauijk)
+{
+    return (1-phi)*tauij+sumdeltatauijk;
+}
+
+void AntColonyOptimization::SumDeltaTauijk(const vector<Point> &Path)
+{
+    std::map<nodenumpair,double>::const_iterator it;
+    //vector<nodenumpair> VisitedEdges;
+    nodenumpair np;
+    double L = 0;
+
+    if(Path.size()<=0)
+        return;
+
+    for(int i = 0;i<(int)Path.size()-1;++i){
+        L=0;
+        np.from = Path.at(i).y*gridcontroller->numberOfColumns+Path.at(i).x;
+        np.to = Path.at(i+1).y*gridcontroller->numberOfColumns+Path.at(i+1).x;
+
+        it = NodeNumPairMap.find(np);
+        if(it!=NodeNumPairMap.end())
+            L = it->second;
+        L += 1/Path.size();
+
+        NodeNumPairMap.insert(std::pair<nodenumpair,double>(np,L));
+
     }
 }
 
-double AntColonyOptimization::UpdateEvaporationFormula(const int& fromNodeNum,const int& toNodeNum)
+double AntColonyOptimization::UpdateEvaporationFormula(const int& fromNodeNum,const int& toNodeNum) //FOR BEST PATH only
 {
 
     return (1-phi)*PHEROMONCOSTMATRIX[fromNodeNum*gridcontroller->numberOfColumns+toNodeNum]+(phi*tauzero);

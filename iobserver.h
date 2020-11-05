@@ -26,6 +26,7 @@ public:
     IObserver() {}
     virtual ~IObserver() {if(grid) delete[] grid;}
     virtual void setGridValue(int row, int col, int val) = 0;
+    virtual void clearPathColors() = 0;
 public:
     int * grid = nullptr;
     Point src;
