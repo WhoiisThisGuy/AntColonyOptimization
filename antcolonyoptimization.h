@@ -50,6 +50,9 @@ private:
     double GlobalPheromoneFormula(double tauij,double sumdeltatauijk);
     void SumDeltaTauijk(const vector<Point>& Path);
     void ComulativeSum(vector<double>& selectables);
+    void printPheromoneMatrix();
+    void OfflinePheromoneUpdate();
+
 private:
 
     int dstNodeNum;
@@ -65,6 +68,7 @@ private:
     int shortestPathAntId;
     map<nodenumpair,double> NodeNumPairMap;
     long int ShortestLenght;
+    int bestAntId;
 
 };
 
