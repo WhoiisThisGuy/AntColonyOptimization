@@ -40,9 +40,9 @@ private:
     bool CheckAroundForDst(const Point& temp);
     int RouletteWheelSelect(const vector<double>& ijprobabilites);
     Point ChooseNextNode(const Point& temp);
-    void SetNegativeValueAroundPoint(const int& i, const int& j);
+    void SetNegativeValueAroundPoint(const int& i, const int& j); //not needed
     bool IsCellOkey();
-    void CalculateProbability(const vector<double>& selectables, int tempnodenum,vector<double> &ijprobabilites);
+    void CalculateProbability(const vector<double>& selectables,const vector<Point>& SelectableNodes,vector<double> &ijprobabilites, const Point& from);
     void LocalPheromoneUpdate(const vector<Point> &path);
     void GlobalPheromoneUpdate();
     double UpdateEvaporationFormula(const int& fromNodeNum,const int& toNodeNum);
@@ -51,24 +51,36 @@ private:
     void SumDeltaTauijk(const vector<Point>& Path);
     void ComulativeSum(vector<double>& selectables);
     void printPheromoneMatrix();
-    void OfflinePheromoneUpdate();
+    void IterationBestPathUpdate();
+    double OfflineUpdateFormula(double tauij, double deltatauij);
+
+    double Eta(const Point& i,const Point& j);
+    double eucledianDistance(const double& x1, const double& y1, const double& x2, const double& y2) {
+        return sqrt(pow((x2-x1),2) + pow((y2 - y1), 2));
+    }
 
 private:
-
-    int dstNodeNum;
-    int numberOfAnts;
+    /* Parameters */
     double tauzero;
     double phi;
     double alpha;
+    double beta;
+
+
+    int dstNodeNum;
+    int numberOfAnts;
+
     int numberOfIterations;
     int numberofgridcells;
     double* PHEROMONCOSTMATRIX;
     bool* VISITED;
     vector<Point> ShortestPath;
+    vector<Point> IterationBestPath;
     int shortestPathAntId;
     map<nodenumpair,double> NodeNumPairMap;
     long int ShortestLenght;
     int bestAntId;
+    int IterationBestLength;
 
 };
 
