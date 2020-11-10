@@ -53,6 +53,7 @@ private:
     void printPheromoneMatrix();
     void IterationBestPathUpdate();
     double OfflineUpdateFormula(double tauij, double deltatauij);
+    void SaveSixBest(const vector<Point>& Path);
 
     double Eta(const Point& i,const Point& j);
     double eucledianDistance(const double& x1, const double& y1, const double& x2, const double& y2) {
@@ -65,6 +66,8 @@ private:
     double phi;
     double alpha;
     double beta;
+    double theta;
+    double kappa;
 
 
     int dstNodeNum;

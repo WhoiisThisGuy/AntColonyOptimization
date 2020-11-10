@@ -11,10 +11,10 @@ AntColonyOptimization::AntColonyOptimization()
 
 AntColonyOptimization::~AntColonyOptimization()
 {
-    if(VISITED)
-        delete [] VISITED;
-    if(PHEROMONCOSTMATRIX)
-        delete [] PHEROMONCOSTMATRIX;
+//    if(VISITED)
+//        delete [] VISITED;
+//    if(PHEROMONCOSTMATRIX)
+//        delete [] PHEROMONCOSTMATRIX;
 
     //cout<<" ACO deletted"<<endl;
 }
@@ -37,8 +37,10 @@ void AntColonyOptimization::IterationBestPathUpdate()
     double deltatauijk = 1/(double)L;
     double pheromoneValue;
 
+    deltatauijk = pow(deltatauijk,theta);
 
     for(int i = 0;i< L-1;++i){
+
         pheromoneValue = 0;
         np.from = ShortestPath.at(i).y*gridcontroller->numberOfColumns+ShortestPath.at(i).x;
         np.to = ShortestPath.at(i+1).y*gridcontroller->numberOfColumns+ShortestPath.at(i+1).x;
@@ -49,18 +51,32 @@ void AntColonyOptimization::IterationBestPathUpdate()
     }
 }
 
-int AntColonyOptimization::StartSearch()
+double AntColonyOptimization::OfflineUpdateFormula(double tauij, double deltatauij)
+{
+    return (1-phi)*tauij+(phi*deltatauij);
+}
+
+void AntColonyOptimization::SaveSixBest(const vector<Point> &Path)
 {
 
+
+}
+
+int AntColonyOptimization::StartSearch()
+{
+    int colorNum = 5;
+
     for(int i = 0; i<numberOfIterations;++i){
+        IterationBestPath.clear();
         cout<<"Started"<<i<<". iteration"<<endl;
 //        cout<<"Press a key to start"<<i<<". iteration"<<endl;
 //        system("pause");
         NodeNumPairMap.clear();
-        gridcontroller->clearPathColors();
+        //gridcontroller->clearPathColors();
 
         //Finding country roads
         for(int antId = 0;antId<numberOfAnts;++antId){
+            cout<<"**************************************"<<endl;
             cout<<"Ant: "<<antId<<" is searching..."<<endl;
             int result = false;
             while(!result){
@@ -75,35 +91,40 @@ int AntColonyOptimization::StartSearch()
         IterationBestPathUpdate();
         //GlobalPheromoneUpdate();
 
-        DrawSolution(4,ShortestPath);
-
+        if(i>=numberOfIterations-5){
+             DrawSolution(colorNum,IterationBestPath);
+             ++colorNum;
+        }
         cout<<"------------------------------------------------"<<endl;
         cout<<"Best Path award goes to Ant: "<<bestAntId<<" with length of: "<<ShortestPath.size()<<endl;
         cout<<"------------------------------------------------"<<endl;
-
-
     } //Main iteration
 
     //End
     cout<<"Search done!"<<endl;
+    DrawSolution(4,ShortestPath);
 
     if(VISITED)
         delete [] VISITED;
     if(PHEROMONCOSTMATRIX)
         delete [] PHEROMONCOSTMATRIX;
 
-    return true;
+    return 0;
 }
+
 
 bool AntColonyOptimization::Init(vector<string> Parameters) //0 - number of ants, 1 - initial pheromone level, 2 - phi, 3 - number of iterations
 {
     //PARAMETERS//
     numberOfAnts = 10;
-    tauzero = 0.25;
-    phi = 0.15;
     numberOfIterations = 10;
-    alpha = 3.5;
-    beta = 10;
+
+    tauzero = 1;
+    phi = 0.1;
+    alpha = 1.5;
+    beta = 40;
+    theta = 10.0; //used in the iteration best update
+    kappa = 0.1;
     //PARAMETERS//
 
 
@@ -236,6 +257,7 @@ int AntColonyOptimization::FindSolutionForAnt(const int& antId)
     temp = gridcontroller->src;
     VISITED[gridcontroller->src.y*gridcontroller->numberOfColumns+gridcontroller->src.x] = true;
 
+
     while(temp.x != gridcontroller->dst.x || temp.y != gridcontroller->dst.y){
 
         if(!HasFreeNeighBour(temp)){//DeadEnd
@@ -278,15 +300,11 @@ int AntColonyOptimization::FindSolutionForAnt(const int& antId)
         cout<<"Ant: "<<antId<<" found the same length path as the Best Solution! GG WP"<<endl;
     }
 
+
     LocalPheromoneUpdate(Path);
 
-    /////////////WARNING TAKE THIS OUT //////////////
-    int colornum = antId+5; //from 5 - 9 is free to use
-    /////////////WARNING TAKE THIS OUT //////////////
-    cout<<"------------------------------------------------"<<endl;
-    if(antId>4){
-        DrawSolution(colornum,Path);
-    }
+    cout<<"**************************************"<<endl;
+
 
     return true; //solution found
 
@@ -422,7 +440,7 @@ int AntColonyOptimization::RouletteWheelSelect(const vector<double>& ijprobabili
     double rnd = (rand() % 10 + 1)/(double)10;
     double offset = 0.0;
 
-    for (int i = ijprobabilites.size()-1; i>=0 ; --i) {
+    for (int i = ijprobabilites.size()-1; i>=0 ; --i) { //parsing backwards because the smallest value is the last one
         offset = ijprobabilites[i];
         if (rnd <= offset) {
             return i;
@@ -436,12 +454,6 @@ int AntColonyOptimization::RouletteWheelSelect(const vector<double>& ijprobabili
     return randint;
 }
 
-
-
-double AntColonyOptimization::OfflineUpdateFormula(double tauij, double deltatauij)
-{
-    return (1-phi)*tauij+(phi*deltatauij);
-}
 
 double AntColonyOptimization::Eta(const Point& i,const Point& j)
 {
@@ -496,6 +508,7 @@ void AntColonyOptimization::LocalPheromoneUpdate(const vector<Point> &path)
 {
 
     double tempvalue;
+    double newValue;
 
     Point from,to;
 
@@ -510,7 +523,8 @@ void AntColonyOptimization::LocalPheromoneUpdate(const vector<Point> &path)
         fromNodeNum = from.y*gridcontroller->numberOfColumns+from.x;
         toNodeNum = to.y*gridcontroller->numberOfColumns+to.x;
         tempvalue = PHEROMONCOSTMATRIX[fromNodeNum*numberofgridcells+toNodeNum];
-        PHEROMONCOSTMATRIX[fromNodeNum*numberofgridcells+toNodeNum] = (1-phi)*tempvalue+(phi*tauzero);
+        newValue = (1-phi)*tempvalue+(phi*kappa);
+        PHEROMONCOSTMATRIX[fromNodeNum*numberofgridcells+toNodeNum] = newValue;
 
     }
 }
