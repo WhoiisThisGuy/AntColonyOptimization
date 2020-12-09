@@ -20,9 +20,7 @@ struct nodenumpair{
             return true;
         return false;
     }
-    bool operator<(const nodenumpair &rhs)const {
-       return this->from < rhs.from ||  this->to < rhs.to;
-    }
+    //operator < has to be overloaded for using Map.
 
 };
 
@@ -31,16 +29,15 @@ class AntColonyOptimization : public IPathfinder
 public:
     AntColonyOptimization();
     virtual ~AntColonyOptimization();
-    int StartSearch() override;
-    bool Init(vector<string> Parameters) override;
-
+    int StartSearch(bool *abortFlag = nullptr) override;
+    bool Init(const vector<string>& Parameters) override;
+    vector<int> getPath() override;
 private:
     int FindSolutionForAnt(const int& antId);
     bool HasFreeNeighBour(const Point& temp);
     bool CheckAroundForDst(const Point& temp);
     int RouletteWheelSelect(const vector<double>& ijprobabilites);
     Point ChooseNextNode(const Point& temp);
-    void SetNegativeValueAroundPoint(const int& i, const int& j); //not needed
     bool IsCellOkey();
     void CalculateProbability(const vector<double>& selectables,const vector<Point>& SelectableNodes,vector<double> &ijprobabilites, const Point& from);
     void LocalPheromoneUpdate(const vector<Point> &path);
@@ -53,7 +50,6 @@ private:
     void printPheromoneMatrix();
     void IterationBestPathUpdate();
     double OfflineUpdateFormula(double tauij, double deltatauij);
-    void SaveSixBest(const vector<Point>& Path);
 
     double Eta(const Point& i,const Point& j);
     double eucledianDistance(const double& x1, const double& y1, const double& x2, const double& y2) {
@@ -69,7 +65,6 @@ private:
     double theta;
     double kappa;
 
-
     int dstNodeNum;
     int numberOfAnts;
 
@@ -79,11 +74,13 @@ private:
     bool* VISITED;
     vector<Point> ShortestPath;
     vector<Point> IterationBestPath;
+    vector<Point> firstAntPath;
     int shortestPathAntId;
     map<nodenumpair,double> NodeNumPairMap;
     long int ShortestLenght;
     int bestAntId;
     int IterationBestLength;
+    int colorNum;
 
 };
 
