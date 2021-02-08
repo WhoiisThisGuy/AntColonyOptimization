@@ -14,17 +14,6 @@ AntColonyOptimization::~AntColonyOptimization()
    // cout<<"Deleted ACO obj"<<endl;
 }
 
-
-void AntColonyOptimization::printPheromoneMatrix()
-{
-//    for(int i = 0;i<numberofgridcells;++i){
-//        for(int j = 0;j<numberofgridcells;++j){
-//            cout<<PHEROMONCOSTMATRIX[i*numberofgridcells+j]<<"  ";
-//        }
-//        cout<<endl;
-//    }
-}
-
 void AntColonyOptimization::IterationBestPathUpdate()
 {
     nodenumpair np;
@@ -62,7 +51,8 @@ int AntColonyOptimization::StartSearch(bool *abortFlag)
             return -1;
         }
 
-        //Finding country roads
+        //Finding country roads in West Virginia from here
+        //Search starts from here
         colorNum = 5;
         for(int antId = 0;antId<numberOfAnts;++antId){
             if(*abortFlag == true){ //catch abortFlag
@@ -83,19 +73,19 @@ int AntColonyOptimization::StartSearch(bool *abortFlag)
                 }
                 if(numberOfAnts != 5 && antId==numberOfAnts-5)
                     gridcontroller->clearPathColors();
-            }//result iteration
-        }//AntId iteration
+            }//result iteration end 
+        }//AntId iteration end
 
         IterationBestPathUpdate();
         //GlobalPheromoneUpdate();
 
 
-//        if(i>=numberOfIterations-5){
+//        if(i>=numberOfIterations-5){ //Used to draw the last 5 iteration best.
 //             DrawSolution(colorNum,IterationBestPath);
 //             ++colorNum;
 //        }
 
-    } //Main iteration
+    } //Main iteration end
 
     //End
     DrawSolution(4,ShortestPath);
@@ -115,7 +105,7 @@ vector<int> AntColonyOptimization::getPath()
 }
 
 
-bool AntColonyOptimization::Init(const vector<string> &Parameters) //0 - number of ants, 1 - initial pheromone level, 2 - phi, 3 - number of iterations
+bool AntColonyOptimization::Init(const vector<string> &Parameters)
 {
     if(Parameters.size()<8)
         return false;
@@ -141,7 +131,7 @@ bool AntColonyOptimization::Init(const vector<string> &Parameters) //0 - number 
     try{
     PHEROMONCOSTMATRIX = new double[numberofgridcells*numberofgridcells];
     }catch(std::error_code e){
-
+      //out of memory
 
     }
     try{
@@ -193,7 +183,7 @@ int AntColonyOptimization::FindSolutionForAnt(const int& antId)
 
     ///////////////////////////SOLUTION FOUND FROM HERE /////////////////////////////////
     //SumDeltaTauijk(Path); //Saving the sum of lengths for global update
-    if(antId == 0){
+    if(antId == 0){  //Used only for visualizing purposes
         DrawSolution(10,Path);
     }
     else if(antId>=numberOfAnts-5){
